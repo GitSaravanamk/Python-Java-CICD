@@ -1,0 +1,56 @@
+
+name: Python and Java Docker CI-CD
+
+# Trigger the workflow whenever code is pushed to main
+on:
+  push:
+    branches:
+      - main
+
+  # Also allow manual execution
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+
+    # GitHub provides a temporary Ubuntu machine
+    runs-on: ubuntu-latest
+
+    steps:
+
+      # Step 1: Download source code from GitHub
+      - name: Checkout source code
+        uses: actions/checkout@v6
+
+      # Step 2: Log in to Docker Hub
+      - name: Login to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # Step 3: Set up Docker Buildx
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      # Step 4: Build and push Python Docker image
+      - name: Build and push Python image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./python-app
+          file: ./python-app/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/python-cicd-demo:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/python-cicd-demo:${{ github.sha }}
+
+      # Step 5: Build and push Java Docker image
+      - name: Build and push Java image
+        uses: docker/build-push-action@v7
+        with:
+          context: ./java-app
+          file: ./java-app/Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/java-cicd-demo:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/java-cicd-demo:${{ github.sha }}
